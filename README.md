@@ -1,39 +1,34 @@
 # pulse-pipeline
 
-A pulse-response measurement and analysis pipeline for an instrumented
-supercapacitor test fixture — modeled in NGspice, captured with a Siglent
-SDS804X HD over SCPI, and reduced to a single per-pulse summary table with
-integrity checks and provenance.
+A bench instrument and analysis pipeline that measures two properties of a
+supercapacitor from its response to a switched load:
 
-This is a lab-notebook project. It is written to be read, not just run, and it
-is explicit about what is simulation, what is instrument validation, and what is
-measurement.
+- **Equivalent series resistance (ESR)** — from the instantaneous voltage step
+  at the moment current begins to flow.
+- **Capacitance** — from the charge delivered during discharge divided by the
+  resulting voltage change.
 
-## Status
+A timed load pulse is applied across the supercapacitor while an oscilloscope
+records the terminal voltage and the current-sense voltage. A Python pipeline
+converts those waveforms into the two values, runs integrity checks on the data,
+and stores a traceable per-pulse record.
 
-| Stage | State | Evidence |
-|---|---|---|
-| Analysis pipeline | **Validated** | Recovers injected ground-truth ESR (30.00 mΩ) and capacitance (10.0005 F) from the NGspice run; all 6 QA checks pass |
-| NGspice fixture model | **Done** | Netlist generated from the fixture registry; runs in-notebook |
-| Siglent SCPI capture path | **Planned** | Driver written against documented commands; awaiting first contact with hardware |
-| Physical fixture + Arduino pulse controller | **Planned** | BOM, schematic, and firmware drafted; awaiting bench build |
+The same circuit is modeled in NGspice. Because the model's ESR and capacitance
+are set by the author, the analysis pipeline can be validated against known
+values before any hardware is built: if the pipeline recovers the numbers put
+into the model, it is working.
 
-*Edit this table as each stage completes. The repo and any résumé line must
-always be in the same state — see "What is honestly claimable" at the bottom.*
+The measurement technique is the same one used in battery pulse testing (HPPC).
+A supercapacitor is used here because its true ESR and capacitance are datasheet
+constants, which provides a reliable reference for validating the pipeline.
 
-## Why this exists
+## Purpose
 
-A companion to the battery-cycle-life notebook. That project analyzed public
-Li-ion cycling data and hit a wall it stated plainly: DCIR estimated from the
-discharge-onset voltage step was sparse, because the public recordings start
-with the load already applied. A proper HPPC test pulses in both directions and
-reads the ohmic drop at pulse onset.
+Test engineering for batteries and energy storage depends on measuring internal
+resistance and capacity accurately and repeatably. That requires more than a
+meter: a controlled test fixture, calibrated instrumentation, a data pipeline
+that preserves traceability, and a way to verify the pipeline itself.
 
-So this project makes the measurement the other notebook needed. Same analysis
-functions, better data structure — and a fixture simple enough to build on a
-bench and honest enough to defend.
-
-## Architecture
-
-Three data sources, one analysis pipeline. The model and the instrument never
-talk to each other; the notebook is the bridge.
+This project builds that stack in miniature on a device whose true values are
+known, so each layer — fixture, capture, analysis, storage — can be checked
+independently.
